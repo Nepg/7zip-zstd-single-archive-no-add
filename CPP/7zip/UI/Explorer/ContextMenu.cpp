@@ -926,7 +926,31 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 
 
     // Compress
-    if ((contextMenuFlags & NContextMenuFlags::kCompress) != 0)
+    bool skipCompress = false;
+    if (_fileNames.Size() == 1 && !fi0.IsDir())
+    {
+      UString name = fs2us(fi0.Name);
+      int dotPos = name.ReverseFind(L'.');
+      if (dotPos >= 0)
+      {
+        const wchar_t *ext = name.Ptr(dotPos + 1);
+        static const wchar_t *kArchiveExts[] = {
+          L"7z", L"zip", L"rar", L"tar", L"gz", L"bz2", L"xz",
+          L"cab", L"iso", L"tgz", L"tbz2", L"lzma", L"arj",
+          L"lzh", L"z", L"cpio", nullptr
+        };
+        for (int i = 0; kArchiveExts[i] != nullptr; i++)
+        {
+          if (_wcsicmp(ext, kArchiveExts[i]) == 0)
+          {
+            skipCompress = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!skipCompress && (contextMenuFlags & NContextMenuFlags::kCompress) != 0)
     {
       CCommandMapItem cmi;
       if (_dropMode)
@@ -940,7 +964,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 
     #ifdef EMAIL_SUPPORT
     // CompressEmail
-    if ((contextMenuFlags & NContextMenuFlags::kCompressEmail) != 0 && !_dropMode)
+    if (!skipCompress && (contextMenuFlags & NContextMenuFlags::kCompressEmail) != 0 && !_dropMode)
     {
       CCommandMapItem cmi;
       cmi.ArcName = arcName;
@@ -950,7 +974,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     #endif
 
     // CompressTo7z
-    if (contextMenuFlags & NContextMenuFlags::kCompressTo7z &&
+    if (!skipCompress && (contextMenuFlags & NContextMenuFlags::kCompressTo7z) &&
         !arcName_7z.IsEqualTo_NoCase(fs2us(fi0.Name)))
     {
       CCommandMapItem cmi;
@@ -969,7 +993,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 
     #ifdef EMAIL_SUPPORT
     // CompressTo7zEmail
-    if ((contextMenuFlags & NContextMenuFlags::kCompressTo7zEmail) != 0  && !_dropMode)
+    if (!skipCompress && (contextMenuFlags & NContextMenuFlags::kCompressTo7zEmail) != 0  && !_dropMode)
     {
       CCommandMapItem cmi;
       UString s;
@@ -983,7 +1007,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
     #endif
 
     // CompressToZip
-    if (contextMenuFlags & NContextMenuFlags::kCompressToZip &&
+    if (!skipCompress && (contextMenuFlags & NContextMenuFlags::kCompressToZip) &&
         !arcName_zip.IsEqualTo_NoCase(fs2us(fi0.Name)))
     {
       CCommandMapItem cmi;
@@ -1002,7 +1026,7 @@ Z7_COMWF_B CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
 
     #ifdef EMAIL_SUPPORT
     // CompressToZipEmail
-    if ((contextMenuFlags & NContextMenuFlags::kCompressToZipEmail) != 0  && !_dropMode)
+    if (!skipCompress && (contextMenuFlags & NContextMenuFlags::kCompressToZipEmail) != 0  && !_dropMode)
     {
       CCommandMapItem cmi;
       UString s;
