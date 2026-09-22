@@ -3,6 +3,9 @@ name: Build 7-Zip-zstd (x64)
 on:
   push:
     branches: [ master ]
+    paths:
+      - 'CPP/**'
+      - '.github/workflows/build-x64.yml'
   workflow_dispatch:
 
 jobs:
