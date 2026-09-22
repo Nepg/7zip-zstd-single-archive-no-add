@@ -1,0 +1,53 @@
+name: Build 7-Zip-zstd (x64)
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Find vcvarsall path
+        shell: cmd
+        run: |
+          for /f "usebackq tokens=*" %%i in (`vswhere -latest -property installationPath`) do (
+            echo VCVARSALL_PATH=%%i\VC\Auxiliary\Build\vcvarsall.bat >> %GITHUB_ENV%
+          )
+
+      - name: Compiling x64
+        shell: cmd
+        run: |
+          call "%VCVARSALL_PATH%" x64
+          set WDIR=%cd%
+          set PLATFORM=x64
+          set SUBSYS=6.00
+          set ROOT=%cd%\CPP\7zip
+          set OUTDIR=%WDIR%\build\bin-x64
+          set ZIP7_DARKMODE=1
+          set LFLAGS=/SUBSYSTEM:WINDOWS,%SUBSYS%
+          set ERRFILE=
+          set STOP_ON_ERROR=1
+          call CPP\build-it.cmd -no-init
+          IF %errorlevel% NEQ 0 EXIT 1
+
+      - name: Collect outputs
+        shell: cmd
+        run: |
+          mkdir out
+          for /r build %%f in (7-zip.dll) do copy "%%f" out\ 2>nul
+          for /r build %%f in (7z.dll) do copy "%%f" out\ 2>nul
+          dir out
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: 7zip-zstd-x64
+          path: out/
+          if-no-files-found: warn
